@@ -2,10 +2,11 @@
   "name": "metarex-backend",
   "version": "1.0.0",
   "description": "Backend service for managing solver auctions",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node src/index.js",
+    "prestart": "[ -f dist/index.js ] || npm run build",
+    "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "migrate": "prisma migrate dev",
     "studio": "prisma studio",
