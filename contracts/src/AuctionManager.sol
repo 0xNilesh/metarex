@@ -7,6 +7,7 @@ import "./libraries/DataTypes.sol";
 contract AuctionManager is Ownable {
     address public swapExecutor;
     mapping(uint256 => DataTypes.Auction) public auctions;
+    uint256 auctionDuration;
 
     event AuctionCreated(uint256 indexed orderId);
     event AuctionFinalized(
@@ -15,8 +16,9 @@ contract AuctionManager is Ownable {
         bytes strategy
     );
 
-    constructor(address owner) Ownable(owner) {
+    constructor(address _owner, uint256 _auctionDuration) Ownable(_owner) {
         swapExecutor = msg.sender;
+        auctionDuration = _auctionDuration;
     }
 
     function createAuction(uint256 orderId) public {
@@ -46,5 +48,9 @@ contract AuctionManager is Ownable {
         auction.finalized = true;
 
         emit AuctionFinalized(orderId, winner, strategy);
+    }
+
+    function setAuctionDuration(uint256 _newAuctionDuration) external onlyOwner {
+        auctionDuration = _newAuctionDuration;
     }
 }

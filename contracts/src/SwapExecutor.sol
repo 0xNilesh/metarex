@@ -38,10 +38,10 @@ contract SwapExecutor is Ownable, Pausable, ReentrancyGuard {
         uint256 fee
     );
 
-    constructor(address _solverRegistry, uint256 _protocolFeePercent) Ownable(msg.sender) {
+    constructor(address _solverRegistry, uint256 _protocolFeePercent, uint256 _auctionDuration) Ownable(msg.sender) {
         require(_protocolFeePercent <= MAX_FEE, "Fee too high");
         solverRegistry = SolverRegistry(_solverRegistry);
-        auctionManager = AuctionManager(msg.sender);
+        auctionManager = new AuctionManager(msg.sender, _auctionDuration);
         protocolFeePercent = _protocolFeePercent;
     }
 
@@ -114,7 +114,6 @@ contract SwapExecutor is Ownable, Pausable, ReentrancyGuard {
         require(targetBalanceAfter - targetBalanceBefore >= bidAmount, "Insufficient output");
 
         order.executed = true;
-        // distributeFee();
 
         // Transfer fee (total - 0.5%, 0.15% to protocol, 0.35% to solver)
         uint256 fee = (targetBalanceAfter * protocolFeePercent) / 10000;
