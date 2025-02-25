@@ -1,0 +1,48 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // You could also use "mysql", "sqlite", etc.
+  url      = env("DATABASE_URL")
+}
+
+model Auction {
+  id              String    @id @default(cuid())
+  orderId         String    @unique
+  createdAt       DateTime  @default(now())
+  endTime         DateTime
+  status          String    // 'created', 'active', 'ending', 'finalized', 'failed'
+  winner          String?
+  winningStrategy String?
+  
+  bids            Bid[]
+
+  @@index([status, endTime])
+  @@index([orderId])
+}
+
+model Bid {
+  id        String   @id @default(cuid())
+  solver    String
+  strategy  String
+  timestamp DateTime @default(now())
+  
+  auction   Auction  @relation(fields: [auctionId], references: [id])
+  auctionId String
+
+  @@index([auctionId])
+}
+
+model Solver {
+  id        String    @id @default(cuid())
+  address   String    @unique
+  name      String?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  @@index([address])
+}
