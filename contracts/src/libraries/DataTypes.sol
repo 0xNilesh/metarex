@@ -23,5 +23,6 @@ library DataTypes {
         address winner;
         bytes strategy;
         bool finalized;
+        uint256 endTime;
     }
 }

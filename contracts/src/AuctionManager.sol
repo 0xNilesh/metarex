@@ -29,7 +29,8 @@ contract AuctionManager is Ownable {
             orderId: orderId,
             winner: address(0),
             strategy: "",
-            finalized: false
+            finalized: false,
+            endTime: block.timestamp + auctionDuration
         });
 
         emit AuctionCreated(orderId);
@@ -42,6 +43,7 @@ contract AuctionManager is Ownable {
     ) external onlyOwner {
         DataTypes.Auction storage auction = auctions[orderId];
         require(!auction.finalized, "Already finalized");
+        require(block.timestamp >= auction.endTime, "Auction not ended");
         
         auction.winner = winner;
         auction.strategy = strategy;

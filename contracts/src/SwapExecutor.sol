@@ -87,10 +87,10 @@ contract SwapExecutor is Ownable, Pausable, ReentrancyGuard {
         address[] calldata targets
     ) external nonReentrant whenNotPaused {
         DataTypes.Order storage order = orders[orderId];
-        (, address winner, bytes memory strategy, bool finalized) = auctionManager.auctions(orderId);
+        (, address winner, bytes memory strategy, bool finalized, ) = auctionManager.auctions(orderId);
         
         require(!order.executed, "Order already executed");
-        require(finalized, "auctionInfo not finalized");
+        require(finalized, "auction not finalized");
         require(msg.sender == winner, "Not winner");
         require(bidAmount >= order.minTargetAmount, "Below min amount");
         require(targets.length == callData.length, "Length mismatch");
