@@ -6,17 +6,12 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./libraries/DataTypes.sol";
 
 contract SolverRegistry is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    struct Solver {
-        address solverAddress;
-        uint256 deposit;
-        bool isActive;
-    }
-
-    mapping(address => Solver) public solvers;
+    mapping(address => DataTypes.Solver) public solvers;
     uint256 public minDeposit;
     
     event SolverRegistered(address indexed solver, uint256 deposit);
@@ -31,7 +26,7 @@ contract SolverRegistry is Ownable, Pausable, ReentrancyGuard {
         require(msg.value >= minDeposit, "Insufficient deposit");
         require(!solvers[msg.sender].isActive, "Solver already registered");
 
-        solvers[msg.sender] = Solver({
+        solvers[msg.sender] = DataTypes.Solver({
             solverAddress: msg.sender,
             deposit: msg.value,
             isActive: true
