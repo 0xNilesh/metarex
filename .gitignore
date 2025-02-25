@@ -1,3 +1,7 @@
 node_modules
 .env
 dist
+
+# Ignore Winston log files
+logs/
+*.log
