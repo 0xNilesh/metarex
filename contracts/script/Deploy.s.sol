@@ -4,10 +4,12 @@ pragma solidity ^0.8.13;
 import {Script, console} from "forge-std/Script.sol";
 import {SolverRegistry} from "../src/SolverRegistry.sol";
 import {SwapExecutor} from "../src/SwapExecutor.sol";
+import {AuctionManager} from "../src/AuctionManager.sol";
 
 contract DeployScript is Script {
     SolverRegistry public solverRegistry;
     SwapExecutor public swapExecutor;
+    AuctionManager public auctionManager;
 
     function setUp() public {}
 
@@ -19,9 +21,11 @@ contract DeployScript is Script {
         solverRegistry = new SolverRegistry(0.01 ether);
         console.log("SolverRegistry deployed at:", address(solverRegistry));
 
-        // Deploy SwapExecutor with the deployed SolverRegistry address,
         // protocol fee percent set to 0.5% (50 bps), and auction duration of 1 minute (60 seconds)
-        swapExecutor = new SwapExecutor(address(solverRegistry), 50, 60);
+        auctionManager = new AuctionManager(address(solverRegistry), 60);
+
+        // Deploy SwapExecutor with the deployed SolverRegistry address,
+        swapExecutor = new SwapExecutor(address(solverRegistry), address(auctionManager), 50);
         console.log("SwapExecutor deployed at:", address(swapExecutor));
 
         vm.stopBroadcast();

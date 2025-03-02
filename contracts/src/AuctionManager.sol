@@ -16,8 +16,8 @@ contract AuctionManager is Ownable {
         bytes strategy
     );
 
-    constructor(address _owner, uint256 _auctionDuration) Ownable(_owner) {
-        swapExecutor = msg.sender;
+    constructor(address _swapExecutor, uint256 _auctionDuration) Ownable(msg.sender) {
+        swapExecutor = _swapExecutor;
         auctionDuration = _auctionDuration;
     }
 
@@ -54,5 +54,9 @@ contract AuctionManager is Ownable {
 
     function setAuctionDuration(uint256 _newAuctionDuration) external onlyOwner {
         auctionDuration = _newAuctionDuration;
+    }
+
+    function setSwapExecutor(address _newSwapExecutor) external onlyOwner {
+        swapExecutor = _newSwapExecutor;
     }
 }
