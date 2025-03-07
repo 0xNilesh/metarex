@@ -1,4 +1,6 @@
 
+import Footer from "@/components/Footer";
+import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -8,21 +10,7 @@ import { Link } from "react-router-dom";
 const Network = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1A1F2C] to-[#2D233B] text-white">
-      {/* Navbar */}
-      <nav className="container mx-auto py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <BrainCircuit className="h-8 w-8 text-[#9b87f5]" />
-          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#D6BCFA]">MetarexAI</span>
-        </div>
-        <div className="flex gap-4 items-center">
-          <Link to="/" className="text-gray-300 hover:text-white transition-colors">Home</Link>
-          <Link to="/about" className="text-gray-300 hover:text-white transition-colors">About</Link>
-          <Link to="/network" className="text-gray-300 hover:text-white transition-colors">Network</Link>
-          <Button variant="outline" className="border-[#9b87f5] text-[#9b87f5] hover:bg-[#9b87f5] hover:text-white">
-            Connect Wallet
-          </Button>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="container mx-auto py-16">
@@ -248,24 +236,7 @@ const Network = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-[#6E59A5] mt-20">
-        <div className="container mx-auto py-10">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-2">
-              <BrainCircuit className="h-6 w-6 text-[#9b87f5]" />
-              <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#9b87f5] to-[#D6BCFA]">MetarexAI</span>
-            </div>
-            <div className="flex gap-8">
-              <Link to="/" className="text-gray-300 hover:text-white transition-colors">Home</Link>
-              <Link to="/about" className="text-gray-300 hover:text-white transition-colors">About</Link>
-              <Link to="/network" className="text-gray-300 hover:text-white transition-colors">Network</Link>
-              <Link to="/docs" className="text-gray-300 hover:text-white transition-colors">Docs</Link>
-            </div>
-            <p className="text-gray-400 text-sm">© 2023 MetarexAI Solver Network. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

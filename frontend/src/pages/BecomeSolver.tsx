@@ -6,6 +6,8 @@ import { ArrowRight, BrainCircuit, Network, Award, Coins, BadgeCheck, ShieldChec
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const BecomeSolver = () => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -20,22 +22,7 @@ const BecomeSolver = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1A0B2E] to-[#39174B] text-white">
-      {/* Navbar */}
-      <nav className="max-w-[1200px] mx-auto py-4 px-4 flex justify-between items-center animate-fade-in">
-        <div className="flex items-center gap-2">
-          <BrainCircuit className="h-8 w-8 text-[#b987ff]" />
-          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#b987ff] to-[#E6BCFA]">MetarexAI</span>
-        </div>
-        <div className="flex gap-4 items-center">
-          <Link to="/" className="text-gray-300 hover:text-white transition-colors">Home</Link>
-          <Link to="/about" className="text-gray-300 hover:text-white transition-colors">About</Link>
-          <Link to="/swap" className="text-gray-300 hover:text-white transition-colors">Swap</Link>
-          <Link to="/become-solver" className="text-violet-300 hover:text-white transition-colors">Become a Solver</Link>
-          <Button variant="outline" className="border-[#b987ff] text-[#b987ff] hover:bg-[#b987ff] hover:text-white">
-            Connect Wallet
-          </Button>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="max-w-[1200px] mx-auto py-16 px-4">
@@ -190,23 +177,7 @@ const BecomeSolver = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-[#6a3093] mt-20">
-        <div className="max-w-[1200px] mx-auto py-10 px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-2">
-              <BrainCircuit className="h-6 w-6 text-[#b987ff]" />
-              <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#b987ff] to-[#E6BCFA]">MetarexAI</span>
-            </div>
-            <div className="flex gap-8">
-              <Link to="/" className="text-gray-300 hover:text-white transition-colors">Home</Link>
-              <Link to="/about" className="text-gray-300 hover:text-white transition-colors">About</Link>
-              <Link to="/swap" className="text-gray-300 hover:text-white transition-colors">Swap</Link>
-              <Link to="/become-solver" className="text-gray-300 hover:text-white transition-colors">Become a Solver</Link>
-            </div>
-            <p className="text-gray-400 text-sm">© 2023 MetarexAI Solver Network. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
