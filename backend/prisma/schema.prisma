@@ -28,6 +28,7 @@ model Bid {
   id        String   @id @default(cuid())
   solver    String
   strategy  String
+  bidAmount String   // Add this field
   timestamp DateTime @default(now())
   
   auction   Auction  @relation(fields: [auctionId], references: [id])

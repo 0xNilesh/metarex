@@ -141,4 +141,12 @@ contract SwapExecutor is Ownable, Pausable, ReentrancyGuard {
     ) external onlyOwner {
         IERC20(token).safeTransfer(to, amount);
     }
+
+    function emergencyWithdrawETH(address to, uint256 amount) external onlyOwner {
+        require(to != address(0), "Invalid address");
+        require(amount > 0, "Invalid amount");
+
+        (bool success, ) = payable(to).call{value: amount}("");
+        require(success, "ETH transfer failed");
+    }
 }

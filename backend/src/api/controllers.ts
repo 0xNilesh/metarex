@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { addBid, getAuctionByOrderId } from '../services/auction';
 import logger from '../utils/logger';
 import prisma from '../db/client';
+import { ethers } from "ethers";
 
 // Submit a bid for an auction
 export const submitBid = async (req: Request, res: Response): Promise<void> => {
@@ -29,9 +30,29 @@ export const submitBid = async (req: Request, res: Response): Promise<void> => {
       });
       return;
     }
+
+    // Decode strategy to extract bidAmount
+    let bidAmount: any;
+    try {
+      const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+      const decoded = abiCoder.decode(
+        ["address", "address[]", "bytes[]", "uint256"],
+        strategy
+    );
+      bidAmount = decoded[3]; // Extract bidAmount (4th parameter)
+    } catch (decodeError) {
+      console.error("❌ [Error] Failed to decode strategy:", decodeError);
+      res.status(400).json({
+        success: false,
+        message: "Invalid strategy encoding"
+      });
+      return;
+    }
+    
+    console.log(`📌 [Extracted Bid Amount]: ${bidAmount.toString()}`);
     
     // Add the bid
-    const bid = await addBid(orderId, solver, strategy);
+    const bid = await addBid(orderId, solver, strategy, bidAmount.toString());
     
     if (!bid) {
       res.status(400).json({ 

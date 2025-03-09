@@ -28,7 +28,7 @@ export const finalizeAuctionOnChain = async (
     logger.info(`Finalizing auction ${orderId} on blockchain with winner ${winner}`);
     
     // Convert the strategy string to bytes
-    const strategyBytes = ethers.toUtf8Bytes(strategy);
+    const strategyBytes = strategy;
     
     // Submit the transaction
     const tx = await auctionManager.finalizeAuction(

@@ -43,13 +43,25 @@ export const createAuction = async (orderId: string, endTimeUnix: number): Promi
 export const addBid = async (
   orderId: string, 
   solver: string, 
-  strategy: string
+  strategy: string,
+  bidAmount: string,  // Add bidAmount parameter
+  attempt: number = 0
 ): Promise<Bid | null> => {
   try {
     // Find the auction
     const auction = await prisma.auction.findUnique({
       where: { orderId },
     });
+
+    if (!auction) {
+      if (attempt < 3) {
+        logger.warn(`Auction ${orderId} not found, retrying in 5s... (Attempt ${attempt + 1}/3)`);
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 5 seconds
+        return addBid(orderId, solver, strategy, bidAmount, attempt + 1); // Retry
+      }
+      logger.error(`Auction ${orderId} not found after 3 attempts, giving up.`);
+      return null;
+    }
     
     if (!auction) {
       logger.warn(`Attempted to bid on non-existent auction ${orderId}`);
@@ -71,6 +83,7 @@ export const addBid = async (
       data: {
         solver,
         strategy,
+        bidAmount,  // Add bidAmount
         auction: { connect: { id: auction.id } }
       }
     });
@@ -111,13 +124,13 @@ export const getAuctionsToFinalize = async (): Promise<AuctionWithBids[]> => {
 export const findWinningBid = (auction: AuctionWithBids): Bid | null => {
   if (auction.bids.length === 0) return null;
   
-  // Sort bids by timestamp (newest first)
-  const sortedBids = [...auction.bids].sort(
-    (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-  );
+  // Sort bids by bidAmount (highest first)
+  const sortedBids = [...auction.bids].sort((a, b) => {
+    const amountA = BigInt(a.bidAmount);
+    const amountB = BigInt(b.bidAmount);
+    return amountB > amountA ? 1 : amountB < amountA ? -1 : 0;
+  });
   
-  // Return the most recent bid as the winner
-  // This is a simple strategy - you can implement more complex logic
   return sortedBids[0];
 };
 

@@ -18,7 +18,7 @@ contract DeployScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy SolverRegistry with minDeposit of 0.01 ether
-        solverRegistry = new SolverRegistry(0.01 ether);
+        solverRegistry = new SolverRegistry(0.1 ether);
         console.log("SolverRegistry deployed at:", address(solverRegistry));
 
         // protocol fee percent set to 0.5% (50 bps), and auction duration of 1 minute (60 seconds)

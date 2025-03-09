@@ -12,4 +12,4 @@ solc_version = "0.8.25"
 evm_version = "cancun"
 
 [etherscan]
-sonic = { key = "$SONIC_ETHERSCAN_KEY", chain = "57054", url = "https://api-testnet.sonicscan.org/api" }
+sonic = { key = "$SONIC_ETHERSCAN_KEY", chain = "146", url = "https://api.sonicscan.org/api" }
