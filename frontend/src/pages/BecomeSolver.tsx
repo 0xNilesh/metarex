@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -8,16 +7,58 @@ import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useAccount, useWriteContract } from 'wagmi';
+import { parseUnits } from 'viem';
+import { useToast } from "@/hooks/use-toast";
+import { sonic } from "viem/chains";
+import { CONTRACTS } from "@/config/constants";
+
+const solverRegistryAddress = CONTRACTS.solverRegistry;
+const minDeposit = parseUnits("0.1", 18); // 0.1 S token
 
 const BecomeSolver = () => {
+  const { address } = useAccount();
+  const { toast } = useToast();
+  const { writeContract, isPending } = useWriteContract();
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  
-  const handleBecomeSolver = () => {
-    // This would actually do a blockchain transaction in a real app
-    toast({
-      title: "Transaction submitted",
-      description: "Your request to become a solver has been submitted to the blockchain.",
-    });
+
+  const handleRegisterSolver = async () => {
+    if (!address) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet to register as a solver",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const tx = await writeContract({
+        address: solverRegistryAddress,
+        abi: [
+          {
+            "name": "registerSolver",
+            "type": "function",
+            "stateMutability": "payable",
+            "inputs": [],
+            "outputs": []
+          }
+        ],
+        functionName: "registerSolver",
+        args: [],
+        value: minDeposit,
+        chain: sonic, // Add the appropriate chain ID
+        account: address,
+      });
+      console.log("Transaction sent:", tx);
+    } catch (error) {
+      console.error("Error executing transaction:", error);
+      toast({
+        title: "Transaction failed",
+        description: "Please try again",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -130,9 +171,9 @@ const BecomeSolver = () => {
           <Button 
             className="w-full bg-[#b987ff] hover:bg-[#9966FF] text-white py-6 shadow-[0_0_15px_rgba(185,135,255,0.3)] hover:shadow-[0_0_25px_rgba(185,135,255,0.5)] transition-all duration-300"
             disabled={!agreedToTerms}
-            onClick={handleBecomeSolver}
+            onClick={handleRegisterSolver}
           >
-            Agree & Become a Solver
+            {isPending ? "Registering..." : "Agree & Become a Solver"}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
