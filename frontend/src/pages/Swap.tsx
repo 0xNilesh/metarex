@@ -32,6 +32,8 @@ const Swap = () => {
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
   const [balances, setBalances] = useState<{ [key: string]: string }>({ wS: "0", USDC: "0" });
 
+  console.log(address);
+
   // Modified token list
   const tokens = [
     { id: "wS", name: "Wrapped Sonic", price: 0.42 },
@@ -40,29 +42,46 @@ const Swap = () => {
 
   const MAX_AMOUNT = 50;
 
-  const { data: wsBalance } = useContractRead({
+  const { data: wsBalance, refetch: refetchWsBalance } = useContractRead({
     address: CONTRACTS.ws,
     abi: erc20ABI,
     functionName: 'balanceOf',
-    args: [address || '0x'],
+    args: [address || '0x']
   });
 
-  const { data: usdcBalance } = useContractRead({
+  const { data: usdcBalance, refetch: refetchUsdcBalance } = useContractRead({
     address: CONTRACTS.usdc,
     abi: erc20ABI,
     functionName: 'balanceOf',
-    args: [address || '0x'],
+    args: [address || '0x']
   });
 
-  // Fetch balances
+  // Check allowance
+  const { data: allowance, refetch: refetchAllowance } = useContractRead({
+    address: CONTRACTS[fromToken.toLowerCase() as keyof typeof CONTRACTS],
+    abi: erc20ABI,
+    functionName: 'allowance',
+    args: [address || '0x', CONTRACTS.swapExecutor]
+  });
+
+  // Fetch balances when address changes
   useEffect(() => {
-    if (address && wsBalance && usdcBalance) {
-        setBalances({
-          wS: formatUnits(wsBalance as bigint, TOKEN_DECIMALS.wS),
-          USDC: formatUnits(usdcBalance as bigint, TOKEN_DECIMALS.USDC),
-        });
+    if (address) {
+      refetchWsBalance();
+      refetchUsdcBalance();
+      refetchAllowance();
     }
-  }, [address, wsBalance, usdcBalance]);
+  }, [address, refetchWsBalance, refetchUsdcBalance]);
+
+  // Update balances when data changes
+  useEffect(() => {
+    if (wsBalance !== undefined && usdcBalance !== undefined) {
+      setBalances({
+        wS: formatUnits(wsBalance as bigint, TOKEN_DECIMALS.wS),
+        USDC: formatUnits(usdcBalance as bigint, TOKEN_DECIMALS.USDC),
+      });
+    }
+  }, [wsBalance, usdcBalance]);
 
   // Calculate price based on selected tokens
   const calculatePrice = (amount: string, from: string, to: string) => {
@@ -121,40 +140,66 @@ const Swap = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Check allowance
-  const { data: allowance } = useContractRead({
-    address: CONTRACTS[fromToken.toLowerCase() as keyof typeof CONTRACTS],
-    abi: erc20ABI,
-    functionName: 'allowance',
-    args: [address || '0x', CONTRACTS.swapExecutor]
-  });
-
   // Prepare approve transaction
-  const { writeContract: approveWrite, isPending: isLoadingApprove } = useWriteContract();
-  const { writeContract: swapWrite, isPending: isLoadingSwap } = useWriteContract();
+  const { writeContract: approveWrite, isPending: isLoadingApprove } = useWriteContract({
+    mutation: {
+      onSuccess: async (data) => {
+        toast({
+          title: "Approval successful",
+          description: "You can now swap your tokens",
+        });
+        // Either refetch allowance
+        await refetchAllowance();
+        // Or directly set needsApproval to false
+        setNeedsApproval(false);
+      },
+      onError: (error) => {
+        toast({
+          title: "Approval failed",
+          description: "Please try again",
+          variant: "destructive",
+        });
+        console.error("Error:", error);
+      }
+    }
+  });
 
   const handleApprove = async (e) => {
     e.preventDefault();
 
     if (!address) {
-      alert("Wallet not connected.");
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet first",
+        variant: "destructive"
+      });
       return;
     }
+
     try {
-        const tx = await approveWrite({
-          address: CONTRACTS[fromToken.toLowerCase() as keyof typeof CONTRACTS],
-          abi: erc20ABI,
-          functionName: 'approve',
-          args: [CONTRACTS.swapExecutor, parseUnits(fromAmount || '0', TOKEN_DECIMALS[fromToken])],
-          chain: sonic, // Add the appropriate chain ID
-          account: address,
-        });
-        console.log("Transaction sent:", tx);
-      } catch (error) {
-        console.error("Error executing transaction:", error);
-        // alert("Transaction failed. Please try again.");
-      }
+      await approveWrite({
+        address: CONTRACTS[fromToken.toLowerCase() as keyof typeof CONTRACTS],
+        abi: erc20ABI,
+        functionName: 'approve',
+        args: [CONTRACTS.swapExecutor, parseUnits(fromAmount || '0', TOKEN_DECIMALS[fromToken])],
+        chain: sonic,
+        account: address,
+      });
+    } catch (error) {
+      console.error("Error executing transaction:", error);
+    }
   };
+
+  const { writeContract: swapWrite, isPending: isLoadingSwap } = useWriteContract({
+    mutation: {
+      onSuccess: async (data) => {
+        toast({
+          title: "Order created successful",
+          description: "Auction is being processed",
+        });
+      },
+    }
+  });
 
   const handleSwap = async (e) => {
     e.preventDefault();
@@ -186,10 +231,25 @@ const Swap = () => {
 
   // Check if approval is needed
   useEffect(() => {
-    if (allowance && fromAmount) {
-      setNeedsApproval(BigInt(allowance as bigint) < parseUnits(fromAmount, TOKEN_DECIMALS[fromToken]));
+    console.log("Allowance:", allowance);
+    console.log("FromAmount:", fromAmount);
+    
+    if (fromAmount) {
+      const allowanceValue = allowance ? BigInt(allowance.toString()) : BigInt(0);
+      const requiredAmount = parseUnits(fromAmount, TOKEN_DECIMALS[fromToken]);
+      const needsApprove = allowanceValue < requiredAmount;
+      
+      console.log("Allowance Value:", allowanceValue.toString());
+      console.log("Required Amount:", requiredAmount.toString());
+      console.log("Needs Approval:", needsApprove);
+      
+      setNeedsApproval(needsApprove);
+    } else {
+      setNeedsApproval(false);
     }
-  }, [allowance, fromAmount]);
+  }, [allowance, fromAmount, fromToken]);  // Add fromToken to dependencies
+
+  console.log(needsApproval);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1A0B2E] to-[#39174B] text-white animate-fade-in">
