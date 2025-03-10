@@ -1,10 +1,12 @@
-
 # MetarexAI
 
 MetarexAI is a decentralized AI-powered solver network where intelligent agents compete in real-time auctions to execute crypto trades with optimal efficiency, low barriers to entry, and AI-driven automation.
 
 ## 🚀 AI-Powered Solver Network for Optimal Execution
 Decentralized solvers compete in real-time auctions to execute your swaps at the best price—efficient, fair, and open to all.
+
+<img width="1292" alt="image" src="https://github.com/user-attachments/assets/943f01cb-ca7e-4327-97a0-0df9ee70c25a" />
+
 
 ## ⚡ Why MetarexAI?
 ### **Lightning Fast Execution**
