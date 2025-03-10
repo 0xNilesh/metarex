@@ -1,0 +1,43 @@
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "package.json",
+        "use": "@vercel/node",
+        "config": {
+          "buildCommand": "npm install && npm run build"
+        }
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "dist/index.js"
+      }
+    ],
+    "env": {
+      "NODE_ENV": "production"
+    },
+    "functions": {
+      "api/index.js": {
+        "runtime": "nodejs18.x",
+        "maxDuration": 10
+      }
+    },
+    "healthcheck": {
+      "path": "/health",
+      "interval": 60,
+      "timeout": 5
+    },
+    "crons": [
+      {
+        "path": "/health",
+        "schedule": "*/5 * * * *"
+      }
+    ],
+    "restart": {
+      "maxRetries": 5,
+      "window": 60
+    }
+  }
+  

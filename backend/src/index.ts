@@ -18,6 +18,10 @@ app.use(cors()); // CORS
 app.use(express.json()); // Parse JSON bodies
 app.use(requestLogger); // Log requests
 
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // Apply routes
 app.use('/api', routes);
 
