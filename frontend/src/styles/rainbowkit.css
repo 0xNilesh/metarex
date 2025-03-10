@@ -1,0 +1,9 @@
+[data-rk] {
+  --rk-overlay-z-index: 1000;
+  --rk-modal-z-index: 2000;
+}
+
+.rainbow-kit-connect {
+  position: relative;
+  z-index: 50;
+}

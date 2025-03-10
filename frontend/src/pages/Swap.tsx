@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,25 +10,59 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { useAccount, useContractRead, useWriteContract } from 'wagmi';
+import { parseUnits, formatUnits } from 'viem';
+import { CONTRACTS, TOKEN_DECIMALS } from '@/config/constants';
+import { erc20ABI, swapExecutorABI } from '@/config/abis';
+import { sonic } from "viem/chains";
 
 const Swap = () => {
+  const { address } = useAccount();
+  const [needsApproval, setNeedsApproval] = useState(false);
   const { toast } = useToast();
   const [fromAmount, setFromAmount] = useState<string>("");
   const [toAmount, setToAmount] = useState<string>("");
-  const [fromToken, setFromToken] = useState<string>("ETH");
+  const [fromToken, setFromToken] = useState<string>("wS");
   const [toToken, setToToken] = useState<string>("USDC");
   const [slippage, setSlippage] = useState<number>(0.5);
   const [priceImpact, setPriceImpact] = useState<number>(0.12);
   const [solverEfficiency, setSolverEfficiency] = useState<number>(0);
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
+  const [balances, setBalances] = useState<{ [key: string]: string }>({ wS: "0", USDC: "0" });
 
-  // Token list for demonstration
+  // Modified token list
   const tokens = [
-    { id: "ETH", name: "Ethereum", price: 3500 },
+    { id: "wS", name: "Wrapped Sonic", price: 0.42 },
     { id: "USDC", name: "USD Coin", price: 1 },
-    { id: "BTC", name: "Bitcoin", price: 62000 },
-    { id: "METAREX", name: "Metarex", price: 0.42 },
   ];
+
+  const MAX_AMOUNT = 50;
+
+  const { data: wsBalance } = useContractRead({
+    address: CONTRACTS.ws,
+    abi: erc20ABI,
+    functionName: 'balanceOf',
+    args: [address || '0x'],
+  });
+
+  const { data: usdcBalance } = useContractRead({
+    address: CONTRACTS.usdc,
+    abi: erc20ABI,
+    functionName: 'balanceOf',
+    args: [address || '0x'],
+  });
+
+  // Fetch balances
+  useEffect(() => {
+    if (address && wsBalance && usdcBalance) {
+        setBalances({
+          wS: formatUnits(wsBalance as bigint, TOKEN_DECIMALS.wS),
+          USDC: formatUnits(usdcBalance as bigint, TOKEN_DECIMALS.USDC),
+        });
+    }
+  }, [address, wsBalance, usdcBalance]);
 
   // Calculate price based on selected tokens
   const calculatePrice = (amount: string, from: string, to: string) => {
@@ -44,23 +77,15 @@ const Swap = () => {
     return result;
   };
 
-  const handleSwap = () => {
-    if (!fromAmount || !toAmount) {
+  const handleFromAmountChange = (value: string) => {
+    if (Number(value) > MAX_AMOUNT) {
       toast({
-        title: "Enter an amount",
-        description: "Please enter an amount to swap",
+        title: "Amount exceeds limit",
+        description: `Maximum amount allowed is ${MAX_AMOUNT} tokens`,
         variant: "destructive"
       });
       return;
     }
-
-    toast({
-      title: "Swap initiated",
-      description: `Swapping ${fromAmount} ${fromToken} for approximately ${toAmount} ${toToken}`,
-    });
-  };
-
-  const handleFromAmountChange = (value: string) => {
     setFromAmount(value);
     if (value) {
       setIsCalculating(true);
@@ -96,9 +121,92 @@ const Swap = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Check allowance
+  const { data: allowance } = useContractRead({
+    address: CONTRACTS[fromToken.toLowerCase() as keyof typeof CONTRACTS],
+    abi: erc20ABI,
+    functionName: 'allowance',
+    args: [address || '0x', CONTRACTS.swapExecutor]
+  });
+
+  // Prepare approve transaction
+  const { writeContract: approveWrite, isPending: isLoadingApprove } = useWriteContract();
+  const { writeContract: swapWrite, isPending: isLoadingSwap } = useWriteContract();
+
+  const handleApprove = async (e) => {
+    e.preventDefault();
+
+    if (!address) {
+      alert("Wallet not connected.");
+      return;
+    }
+    try {
+        const tx = await approveWrite({
+          address: CONTRACTS[fromToken.toLowerCase() as keyof typeof CONTRACTS],
+          abi: erc20ABI,
+          functionName: 'approve',
+          args: [CONTRACTS.swapExecutor, parseUnits(fromAmount || '0', TOKEN_DECIMALS[fromToken])],
+          chain: sonic, // Add the appropriate chain ID
+          account: address,
+        });
+        console.log("Transaction sent:", tx);
+      } catch (error) {
+        console.error("Error executing transaction:", error);
+        // alert("Transaction failed. Please try again.");
+      }
+  };
+
+  const handleSwap = async (e) => {
+    e.preventDefault();
+
+    if (!address) {
+      alert("Wallet not connected.");
+      return;
+    }
+    try {
+        const tx = await swapWrite({
+          address: CONTRACTS.swapExecutor,
+          abi: swapExecutorABI,
+          functionName: 'createOrder',
+          args: [
+            CONTRACTS[fromToken.toLowerCase() as keyof typeof CONTRACTS],
+            parseUnits(fromAmount || '0', TOKEN_DECIMALS[fromToken]),
+            CONTRACTS[toToken.toLowerCase() as keyof typeof CONTRACTS],
+            parseUnits('0', 1)
+          ],
+          chain: sonic, // Add the appropriate chain ID
+          account: address,
+        });
+        console.log("Transaction sent:", tx);
+      } catch (error) {
+        console.error("Error executing transaction:", error);
+        // alert("Transaction failed. Please try again.");
+      }
+  };
+
+  // Check if approval is needed
+  useEffect(() => {
+    if (allowance && fromAmount) {
+      setNeedsApproval(BigInt(allowance as bigint) < parseUnits(fromAmount, TOKEN_DECIMALS[fromToken]));
+    }
+  }, [allowance, fromAmount]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1A0B2E] to-[#39174B] text-white animate-fade-in">
       <Navbar />
+      
+      {/* Disclaimer Alert */}
+      <div className="max-w-[1200px] mx-auto px-4 mt-4">
+        <Alert variant="destructive" className="bg-[#1A0B2E] border-red-600 text-violet-400">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Beta Phase: Only Wrapped Sonic (wS) and USDC tokens are enabled. Maximum transaction amount is limited to 50 tokens. 
+          </AlertDescription>
+          <AlertDescription>
+            Contracts are currently unaudited - please trade with caution.
+          </AlertDescription>
+        </Alert>
+      </div>
 
       {/* Swap Section */}
       <section className="max-w-[1200px] mx-auto py-12 px-4">
@@ -119,7 +227,7 @@ const Swap = () => {
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <label className="text-sm text-violet-300">From</label>
-                  <span className="text-xs text-violet-400">Balance: 1.245 ETH</span>
+                  <span className="text-xs text-violet-400">Balance: {balances[fromToken]}</span>
                 </div>
                 <div className="flex gap-2">
                   <Input
@@ -163,7 +271,7 @@ const Swap = () => {
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <label className="text-sm text-violet-300">To (estimated)</label>
-                  <span className="text-xs text-violet-400">Balance: 1,050 USDC</span>
+                  <span className="text-xs text-violet-400">Balance: {balances[toToken]}</span>
                 </div>
                 <div className="flex gap-2">
                   <Input
@@ -229,20 +337,28 @@ const Swap = () => {
                 </div>
               </div>
             </CardContent>
-            <CardFooter>
-              <Button 
+            <CardFooter className="flex gap-2">
+              {needsApproval && (
+                <Button
+                  onClick={handleApprove}
+                  disabled={!fromAmount || !toAmount || isLoadingApprove}
+                  className="flex-1 bg-gradient-to-r from-[#6a3093] to-[#a044ff]"
+                >
+                  {isLoadingApprove ? "Approving..." : "Approve"}
+                </Button>
+              )}
+              <Button
                 onClick={handleSwap}
-                disabled={!fromAmount || !toAmount || isCalculating}
-                className="w-full bg-gradient-to-r from-[#6a3093] to-[#a044ff] hover:from-[#7a40a3] hover:to-[#b057ff] text-white border-0 transition-all duration-300 hover:shadow-[0_0_15px_rgba(185,135,255,0.3)]"
+                disabled={!fromAmount || !toAmount || needsApproval || isLoadingSwap}
+                className="flex-1 bg-gradient-to-r from-[#6a3093] to-[#a044ff]"
               >
-                {isCalculating ? "Calculating..." : "Swap Tokens"}
+                {isLoadingSwap ? "Swapping..." : "Swap"}
               </Button>
             </CardFooter>
           </Card>
         </div>
       </section>
       
-      {/* Footer */}
       <Footer />
     </div>
   );

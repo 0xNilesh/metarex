@@ -44,30 +44,26 @@ export const addBid = async (
   orderId: string, 
   solver: string, 
   strategy: string,
-  bidAmount: string,  // Add bidAmount parameter
+  bidAmount: string,  
   attempt: number = 0
 ): Promise<Bid | null> => {
   try {
     // Find the auction
     const auction = await prisma.auction.findUnique({
       where: { orderId },
+      include: { bids: true }, // Include bids to check solver participation
     });
 
     if (!auction) {
       if (attempt < 3) {
         logger.warn(`Auction ${orderId} not found, retrying in 5s... (Attempt ${attempt + 1}/3)`);
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 5 seconds
-        return addBid(orderId, solver, strategy, bidAmount, attempt + 1); // Retry
+        await new Promise(resolve => setTimeout(resolve, 5000)); 
+        return addBid(orderId, solver, strategy, bidAmount, attempt + 1); 
       }
       logger.error(`Auction ${orderId} not found after 3 attempts, giving up.`);
       return null;
     }
-    
-    if (!auction) {
-      logger.warn(`Attempted to bid on non-existent auction ${orderId}`);
-      return null;
-    }
-    
+
     if (auction.status === AuctionStatus.FINALIZED || auction.status === AuctionStatus.FAILED) {
       logger.warn(`Attempted to bid on finalized/failed auction ${orderId}`);
       return null;
@@ -77,17 +73,24 @@ export const addBid = async (
       logger.warn(`Attempted to bid on ended auction ${orderId}`);
       return null;
     }
-    
+
+    // Check if solver has already placed a bid
+    const existingBid = auction.bids.find(bid => bid.solver === solver);
+    if (existingBid) {
+      logger.warn(`Solver ${solver} has already placed a bid for auction ${orderId}`);
+      return null;
+    }
+
     // Create the bid
     const bid = await prisma.bid.create({
       data: {
         solver,
         strategy,
-        bidAmount,  // Add bidAmount
+        bidAmount,
         auction: { connect: { id: auction.id } }
       }
     });
-    
+
     // Update auction status to active if it was just created
     if (auction.status === AuctionStatus.CREATED) {
       await prisma.auction.update({
@@ -95,7 +98,7 @@ export const addBid = async (
         data: { status: AuctionStatus.ACTIVE }
       });
     }
-    
+
     logger.info(`Recorded bid from solver ${solver} for auction ${orderId}`);
     return bid;
   } catch (error) {
@@ -103,6 +106,7 @@ export const addBid = async (
     throw error;
   }
 };
+
 
 // Get auctions that need to be finalized
 export const getAuctionsToFinalize = async (): Promise<AuctionWithBids[]> => {

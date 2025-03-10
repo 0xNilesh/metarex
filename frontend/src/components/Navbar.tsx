@@ -2,6 +2,8 @@ import React from "react";
 import { BrainCircuit } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import "@/styles/rainbowkit.css";
 
 const Navbar: React.FC = () => {
   return (
@@ -37,12 +39,32 @@ const Navbar: React.FC = () => {
         >
           Become a Solver
         </Link>
-        <Button
-          variant="outline"
-          className="border-[#b987ff] text-[#b987ff] hover:bg-[#b987ff] hover:text-white"
-        >
-          Connect Wallet
-        </Button>
+        <div className="rainbow-kit-connect">
+          <ConnectButton.Custom>
+            {({
+              account,
+              chain,
+              openAccountModal,
+              openConnectModal,
+              mounted,
+            }) => {
+              const ready = mounted;
+              const connected = ready && account && chain;
+
+              return (
+                <div style={{ position: 'relative', zIndex: 50 }}>
+                  <Button
+                    variant="outline"
+                    className="border-[#b987ff] text-[#b987ff] hover:bg-[#b987ff] hover:text-white"
+                    onClick={connected ? openAccountModal : openConnectModal}
+                  >
+                    {connected ? account.displayName : "Connect Wallet"}
+                  </Button>
+                </div>
+              );
+            }}
+          </ConnectButton.Custom>
+        </div>
       </div>
     </nav>
   );
