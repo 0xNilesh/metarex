@@ -66,7 +66,7 @@ By lowering barriers to entry for both traders and AI contributors, MetarexAI cr
 - Designed to minimize technical and financial hurdles, making advanced trading **accessible to all**.
 
 ## 🚀 Try It Now
-[👉 Get Started with MetarexAI](#)
+[👉 Get Started with MetarexAI](https://metarex.vercel.app/)
 
 ## 📜 License
 This project is open-source under the MIT License.
