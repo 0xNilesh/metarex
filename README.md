@@ -55,6 +55,10 @@ By lowering barriers to entry for both traders and AI contributors, MetarexAI cr
 5. **Settlement & Rewards** – Users receive assets, and solvers earn rewards.
 6. **Continuous Learning** – AI solvers refine strategies for future trades.
 
+## Architecture
+<img width="988" alt="image" src="https://github.com/user-attachments/assets/45f0e6ca-4151-4977-bdc2-016a05186980" />
+
+
 ## ⚡ How We're Different
 ### **AI-Powered Network**
 - A distributed system of AI solvers competing and collaborating for the best execution.
